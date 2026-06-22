@@ -1,0 +1,73 @@
+from scipy.stats import skew, kurtosis
+
+# Remove null values
+returns = df['returns'].dropna()
+
+# Calculate statistics
+mean_return = returns.mean()
+std_return = returns.std()
+skewness = skew(returns)
+kurt = kurtosis(returns)
+
+# Plot
+plt.figure(figsize=(12,6))
+
+sns.histplot(
+    returns,
+    bins=50,
+    kde=True
+)
+
+plt.axvline(
+    mean_return,
+    linestyle='--',
+    linewidth=2,
+    label=f'Mean = {mean_return:.4f}'
+)
+
+plt.title('Daily Return Distribution')
+plt.xlabel('Daily Returns')
+plt.ylabel('Frequency')
+plt.legend()
+
+plt.show()
+
+# Statistical Interpretation
+print("="*50)
+print("RETURN DISTRIBUTION ANALYSIS")
+print("="*50)
+
+print(f"Mean Return     : {mean_return:.4f}")
+print(f"Volatility      : {std_return:.4f}")
+print(f"Skewness        : {skewness:.4f}")
+print(f"Kurtosis        : {kurt:.4f}")
+
+print("\nINTERPRETATION")
+print("-"*50)
+
+# Skewness Interpretation
+if skewness > 0.5:
+    print("Positive Skew → Occasional large positive returns.")
+
+elif skewness < -0.5:
+    print("Negative Skew → Occasional large negative returns.")
+
+else:
+    print("Symmetric Distribution → Balanced return behavior.")
+
+# Kurtosis Interpretation
+if kurt > 3:
+    print("Fat Tails Detected → High probability of extreme moves.")
+
+elif kurt < 0:
+    print("Thin Tails → Less extreme movement than normal distribution.")
+
+else:
+    print("Approximately Normal Distribution.")
+
+# Volatility Interpretation
+if std_return > returns.quantile(0.75):
+    print("High Volatility Stock.")
+
+else:
+    print("Moderate/Low Volatility Stock.")
