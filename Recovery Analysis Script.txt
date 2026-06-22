@@ -1,0 +1,78 @@
+# Recovery Analysis (Very Useful)
+# This tells whether the stock has recovered from past declines.
+print("\nRECOVERY STATUS")
+print("-"*60)
+
+if current_drawdown > -5:
+    print("🟢 Near All-Time High")
+
+elif current_drawdown > -15:
+    print("🟡 Partial Recovery")
+
+elif current_drawdown > -30:
+    print("🟠 Significant Recovery Needed")
+
+else:
+    print("🔴 Deep Drawdown Zone")
+
+# time spend in drawdown
+# Time in Drawdown	Meaning
+# < 30%	Strong stock
+# 30-50%	Healthy
+# 50-70%	Weak
+# >70%	Persistent underperformance
+
+drawdown_days = (df['drawdown'] < 0).sum()
+
+total_days = len(df)
+
+drawdown_percentage = (
+    drawdown_days /
+    total_days
+) * 100
+
+print(f"\nTime in Drawdown: {drawdown_percentage:.2f}%")
+
+# Risk classification
+
+risk_score = 0
+
+if max_drawdown < -20:
+    risk_score += 1
+
+if current_drawdown < -10:
+    risk_score += 1
+
+if drawdown_percentage > 50:
+    risk_score += 1
+
+print("\nRISK CLASSIFICATION")
+print("-"*60)
+
+if risk_score == 0:
+    print("🟢 Low Risk")
+
+elif risk_score == 1:
+    print("🟡 Moderate Risk")
+
+elif risk_score == 2:
+    print("🟠 High Risk")
+
+else:
+    print("🔴 Very High Risk")
+
+
+# Professional Metrics
+# Maximum Drawdown
+max_drawdown = df['drawdown'].min() * 100
+print(f"Maximum Drawdown = {max_drawdown:.2f}%")
+# Current Drawdown
+current_drawdown = df['drawdown'].iloc[-1] * 100
+print(f"Current Drawdown = {current_drawdown:.2f}%")
+# Drawdown Recovery Ratio
+recovery_ratio = (
+    current_drawdown /
+    max_drawdown
+) * 100
+
+print(f"Recovery Ratio = {abs(recovery_ratio):.2f}%")
