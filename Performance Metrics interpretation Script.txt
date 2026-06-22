@@ -1,0 +1,129 @@
+import numpy as np
+
+def interpret_performance_metrics(cagr, sortino_ratio, calmar_ratio, win_rate, max_drawdown=None):
+    """
+    Prints interpretation for CAGR, Sortino, Calmar, and Win Rate.
+    
+    Parameters:
+    -----------
+    cagr : float (e.g., 0.12 for 12%)
+    sortino_ratio : float
+    calmar_ratio : float
+    win_rate : float (percentage, e.g., 55.0 for 55%)
+    max_drawdown : float (optional, e.g., 0.25 for 25%) – if provided, adds context
+    """
+    print("\n" + "="*65)
+    print(" PERFORMANCE INTERPRETATION (CAGR, Sortino, Calmar, Win Rate)")
+    print("="*65)
+    
+    # ---- CAGR (Compound Annual Growth Rate) ----
+    cagr_pct = cagr * 100
+    print(f"\n📈 CAGR: {cagr:.2%}")
+    if cagr < 0:
+        cagr_grade = "negative (losing capital – urgently review strategy)"
+    elif cagr < 0.05:
+        cagr_grade = "low (below typical inflation + risk-free rate)"
+    elif cagr < 0.10:
+        cagr_grade = "moderate (in line with bond-like returns)"
+    elif cagr < 0.20:
+        cagr_grade = "good (equity-like returns)"
+    else:
+        cagr_grade = "excellent (outstanding growth)"
+    print(f"   → This is {cagr_grade}.")
+    print("   (Benchmark: S&P 500 ~10% long-term; risk-free ~7% in your model.)")
+    
+    # ---- Sortino Ratio (focuses on downside risk) ----
+    print(f"\n📉 Sortino Ratio: {sortino_ratio:.2f}")
+    if sortino_ratio < 0:
+        sortino_grade = "negative (return below risk-free – poor downside protection)"
+    elif sortino_ratio < 0.5:
+        sortino_grade = "poor (weak risk-adjusted return considering only downside)"
+    elif sortino_ratio < 1.0:
+        sortino_grade = "acceptable (typical for many diversified portfolios)"
+    elif sortino_ratio < 2.0:
+        sortino_grade = "good (attractive – rewards well for downside risk taken)"
+    else:
+        sortino_grade = "excellent (very strong downside-risk-adjusted performance)"
+    print(f"   → This is {sortino_grade}.")
+    print("   (Sortino > 1.0 is often a target for hedge funds; > 2.0 is outstanding.)")
+    
+    # ---- Calmar Ratio (CAGR / Max Drawdown) ----
+    print(f"\n⚖️  Calmar Ratio: {calmar_ratio:.2f}")
+    if calmar_ratio < 0:
+        calmar_grade = "negative (losses exceed gains – dangerous)"
+    elif calmar_ratio < 0.3:
+        calmar_grade = "poor (returns do not compensate for peak losses)"
+    elif calmar_ratio < 0.6:
+        calmar_grade = "moderate (acceptable for conservative strategies)"
+    elif calmar_ratio < 1.0:
+        calmar_grade = "good (returns proportionally reward the largest loss)"
+    else:
+        calmar_grade = "excellent (very efficient use of drawdown capacity)"
+    print(f"   → This is {calmar_grade}.")
+    print("   (Calmar > 0.5 is decent; trend-following strategies often target > 1.0.)")
+    
+    # ---- Win Rate ----
+    print(f"\n🎯 Win Rate: {win_rate:.2f}%")
+    if win_rate < 40:
+        win_grade = "low (most trades lose – relies on large winners)"
+    elif win_rate < 50:
+        win_grade = "moderate-low (typical for trend-following strategies)"
+    elif win_rate < 60:
+        win_grade = "moderate-high (balanced, good for mean-reversion)"
+    else:
+        win_grade = "high (very consistent – rare for most strategies)"
+    print(f"   → This is a {win_grade} win rate.")
+    print("   (For daily returns, 45–55% is common; trend strategies often have < 50% but higher avg gain.)")
+    
+    # ---- Optional: Max Drawdown context ----
+    if max_drawdown is not None:
+        dd_pct = max_drawdown * 100
+        print(f"\n📉 Max Drawdown (from your data): {max_drawdown:.2%}")
+        if dd_pct < 10:
+            print("   → Very low drawdown – conservative risk profile.")
+        elif dd_pct < 20:
+            print("   → Moderate drawdown – typical for balanced portfolios.")
+        elif dd_pct < 35:
+            print("   → High drawdown – acceptable for aggressive equity strategies.")
+        else:
+            print("   → Severe drawdown – consider risk management adjustments.")
+    
+    # ---- Overall Assessment ----
+    print("\n" + "-"*65)
+    print("📌 OVERALL STRATEGY ASSESSMENT:")
+    
+    # Combine key metrics into a summary
+    good_cagr = cagr > 0.10
+    good_sortino = sortino_ratio > 0.8
+    good_calmar = calmar_ratio > 0.5
+    
+    if good_cagr and good_sortino and good_calmar:
+        summary = ("✅ Excellent risk/reward profile. The strategy generates strong returns "
+                   "while efficiently managing downside and drawdowns.")
+    elif cagr < 0 or sortino_ratio < 0 or calmar_ratio < 0:
+        summary = ("❌ Serious issues detected. Returns are negative or risk-adjusted metrics are poor. "
+                   "Review the strategy logic, position sizing, or market timing.")
+    elif good_cagr or good_sortino or good_calmar:
+        summary = ("⚠️ Mixed performance. One or more metrics are strong, but others lag. "
+                   "Example: a good CAGR with a low Calmar means high drawdowns – consider "
+                   "adding a stop-loss or diversifying.")
+    else:
+        summary = ("⚖️ Moderate performance. Returns are present but risk-adjusted metrics "
+                   "are below ideal thresholds. Fine for conservative capital, but may need "
+                   "optimisation for growth objectives.")
+    
+    print(f"   {summary}")
+    print("="*65 + "\n")
+
+
+# ============== Example usage ==============
+# Assuming you have already computed:
+# cagr, sortino_ratio, calmar_ratio, win_rate, and max_drawdown
+
+interpret_performance_metrics(
+    cagr=cagr,
+    sortino_ratio=sortino_ratio,
+    calmar_ratio=calmar_ratio,
+    win_rate=win_rate,
+    max_drawdown=max_drawdown   # optional
+)

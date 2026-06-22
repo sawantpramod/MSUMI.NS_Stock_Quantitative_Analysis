@@ -1,0 +1,55 @@
+# CAGR
+years = (df['Date'].max() - df['Date'].min()).days / 365.25
+cagr = (
+    (df['Close'].iloc[-1] /
+     df['Close'].iloc[0])
+    ** (1 / years)
+) - 1
+
+# Drawdown
+df['wealth'] = (1 + df['returns']).cumprod()
+df['peak'] = df['wealth'].cummax()
+df['drawdown'] = (
+    (df['wealth'] - df['peak'])
+    / df['peak']
+)
+
+max_drawdown = abs(
+    df['drawdown'].min()
+)
+
+# Sortino
+risk_free_rate = 0.07
+
+annual_return = (
+    df['returns'].mean() * 252
+)
+
+downside_std = (
+    df.loc[df['returns'] < 0,
+           'returns']
+      .std()
+    * np.sqrt(252)
+)
+
+sortino_ratio = (
+    annual_return
+    - risk_free_rate
+) / downside_std
+
+# Calmar
+calmar_ratio = (
+    cagr / max_drawdown
+)
+
+# Win Rate
+win_rate = (
+    (df['returns'] > 0)
+    .mean()
+    * 100
+)
+
+print(f"CAGR: {cagr:.2%}")
+print(f"Sortino Ratio: {sortino_ratio:.2f}")
+print(f"Calmar Ratio: {calmar_ratio:.2f}")
+print(f"Win Rate: {win_rate:.2f}%")
