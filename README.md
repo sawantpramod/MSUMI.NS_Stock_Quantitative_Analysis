@@ -7,7 +7,7 @@ In this deep dive, we'll explore everything from return distributions to golden 
 
 Data Source:
 Ticker: MSUMI.NS (Sumi Wiring)
-Period: January 2022 – June 2026 (till 19-06-2026)
+Period: January 2021 – June 2026 (till 19-06-2026)
 Source: Yahoo Finance via yFinance API
 Metrics: Open, High, Low, Close, Volume
 
