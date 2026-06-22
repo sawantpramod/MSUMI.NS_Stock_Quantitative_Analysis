@@ -1,0 +1,47 @@
+# ======================================================================
+# UPDATED MONTH-WISE INTERPRETATION (FIXED THRESHOLDS)
+# ======================================================================
+print("\n" + "="*70)
+print("MONTH-WISE INTERPRETATION (UPDATED)")
+print("="*70)
+
+# Adjusted thresholds to reflect standard financial return scales
+BULLISH_THRESHOLD = 0.0005  # 0.05%
+BEARISH_THRESHOLD = -0.0005 # -0.05%
+
+for month in monthly_returns.columns:
+    # Assuming monthly_returns holds raw decimals (e.g., 0.0044 for April)
+    avg_ret = monthly_returns[month].mean()
+
+    if avg_ret > BULLISH_THRESHOLD:
+        status = "🟢 Bullish Month"
+    elif avg_ret < BEARISH_THRESHOLD:
+        status = "🔴 Bearish Month"
+    else:
+        status = "🟡 Neutral Month"
+
+    print(f"{month:<12}: {avg_ret*100:.2f}% | {status}")
+
+
+
+# Year-wise Performance Analysis
+yearly_avg = monthly_returns.mean(axis=1)
+
+best_year = yearly_avg.idxmax()
+worst_year = yearly_avg.idxmin()
+
+print("\n" + "="*70)
+print("YEAR-WISE ANALYSIS")
+print("="*70)
+
+print(
+    f"Best Year  : "
+    f"{best_year} "
+    f"({yearly_avg.max()*100:.2f}%)"
+)
+
+print(
+    f"Worst Year : "
+    f"{worst_year} "
+    f"({yearly_avg.min()*100:.2f}%)"
+)

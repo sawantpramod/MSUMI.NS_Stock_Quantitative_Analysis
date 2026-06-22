@@ -1,0 +1,48 @@
+# The Monthly Return Heatmap is a powerful seasonality analysis tool. It helps answer:
+# "Which months historically generate positive or negative returns?"
+# Create Year and Month
+df['Year'] = df['Date'].dt.year
+df['Month'] = df['Date'].dt.month_name()
+
+monthly_returns = (
+    df.pivot_table(
+        values='returns',
+        index='Year',
+        columns='Month',
+        aggfunc='mean'
+    )
+)
+
+# Plot Heatmap
+plt.figure(figsize=(14,7))
+
+sns.heatmap(
+    monthly_returns * 100,
+    annot=True,
+    cmap='RdYlGn',
+    center=0,
+    fmt='.2f'
+)
+
+plt.title('Monthly Return Heatmap (%)')
+plt.show()
+
+# ====================================
+# INTERPRETATION SECTION
+# ====================================
+
+print("="*70)
+print("MONTHLY RETURN HEATMAP ANALYSIS")
+print("="*70)
+
+# Average return by month
+avg_monthly_return = (
+    monthly_returns.mean(axis=0)
+    .sort_values(ascending=False)
+)
+
+print("\nAverage Return By Month (%)")
+print("-"*70)
+
+for month, value in avg_monthly_return.items():
+    print(f"{month:<12}: {value*100:.2f}%")

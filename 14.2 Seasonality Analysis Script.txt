@@ -1,0 +1,53 @@
+# Best and Worst Month Analysis
+best_month = avg_monthly_return.idxmax()
+worst_month = avg_monthly_return.idxmin()
+
+best_return = avg_monthly_return.max() * 100
+worst_return = avg_monthly_return.min() * 100
+
+print("\n" + "="*70)
+print("SEASONALITY ANALYSIS")
+print("="*70)
+
+print(
+    f"Best Performing Month : "
+    f"{best_month} ({best_return:.2f}%)"
+)
+
+print(
+    f"Worst Performing Month: "
+    f"{worst_month} ({worst_return:.2f}%)"
+)
+
+# Monthly Win Rate Analysis
+monthly_positive_pct = (
+    (monthly_returns > 0)
+    .sum(axis=0)
+    /
+    monthly_returns.count(axis=0)
+) * 100
+
+print("\n" + "="*70)
+print("MONTHLY WIN RATE")
+print("="*70)
+
+for month, pct in monthly_positive_pct.items():
+
+    print(
+        f"{month:<12}: "
+        f"{pct:.1f}% Positive Years"
+    )
+
+# Strongest Seasonal Month
+best_win_month = monthly_positive_pct.idxmax()
+best_win_rate = monthly_positive_pct.max()
+
+print("\n" + "="*70)
+print("MOST CONSISTENT MONTH")
+print("="*70)
+
+print(
+    f"{best_win_month} "
+    f"was positive in "
+    f"{best_win_rate:.1f}% of years."
+)
