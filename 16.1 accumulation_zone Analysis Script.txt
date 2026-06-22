@@ -1,0 +1,203 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from scipy.signal import argrelextrema
+
+def find_accumulation_zone(df, lookback_days=120, range_tolerance=0.05):
+    """
+    Detect a potential accumulation zone in a stock's price history.
+
+    Parameters:
+    df (pd.DataFrame): must contain columns: 'Date', 'Close', 'High', 'Low', 'Volume'
+    lookback_days (int): number of recent trading days to analyse
+    range_tolerance (float): allowed deviation from the range boundaries (0.05 = 5%)
+
+    Returns:
+    dict: summary of the accumulation zone and key metrics
+    """
+    # Use recent data
+    recent = df.tail(lookback_days).copy()
+    
+    # 1. Define the range (potential accumulation zone)
+    zone_high = recent['High'].max()
+    zone_low = recent['Low'].min()
+    zone_mid = (zone_high + zone_low) / 2
+    zone_width = zone_high - zone_low
+    
+    # 2. Check if price has been range-bound (within tolerance)
+    recent_close = recent['Close']
+    within_range = recent_close.between(zone_low * (1 - range_tolerance), 
+                                         zone_high * (1 + range_tolerance)).mean()
+    range_bound_score = within_range * 100  # percentage of days inside the range
+    
+    # 3. Detect "Spring" pattern (false breakdown below zone_low)
+    # Find the lowest low in the period, then see if it recovers quickly
+    min_low = recent['Low'].min()
+    # Check if the lowest low is below zone_low and the price recovered above zone_low within 3 days
+    min_idx = recent['Low'].idxmin()
+    if min_low < zone_low:
+        # Check if price closed above zone_low within 3 days after the low
+        min_pos = recent.index.get_loc(min_idx)
+        if min_pos + 3 < len(recent):
+            recovery_prices = recent['Close'].iloc[min_pos:min_pos+4]
+            spring_detected = (recovery_prices > zone_low).any()
+        else:
+            spring_detected = False
+    else:
+        spring_detected = False
+    
+    # 4. Volume analysis
+    # a) Volume at support: average volume on days when price is near zone_low
+    near_support = recent[recent['Low'] <= zone_low * 1.02]
+    volume_at_support = near_support['Volume'].mean() if len(near_support) > 0 else 0
+    
+    avg_volume = recent['Volume'].mean()
+    volume_ratio = volume_at_support / avg_volume if avg_volume > 0 else 0
+    
+    # b) Up vs Down volume in the range
+    up_days = recent[recent['Close'] > recent['Open']]
+    down_days = recent[recent['Close'] < recent['Open']]
+    up_vol = up_days['Volume'].sum()
+    down_vol = down_days['Volume'].sum()
+    volume_balance = up_vol / (up_vol + down_vol) if (up_vol + down_vol) > 0 else 0.5
+    
+    # 5. Accumulation/Distribution Line (A/D) trend
+    # A/D line = cumulative ((Close - Low) - (High - Close)) / (High - Low) * Volume
+    recent['AD'] = ((recent['Close'] - recent['Low']) - (recent['High'] - recent['Close'])) / (recent['High'] - recent['Low']) * recent['Volume']
+    recent['AD_cum'] = recent['AD'].cumsum()
+    
+    # Trend of A/D line: slope over recent period
+    if len(recent) > 10:
+        x = np.arange(len(recent))
+        slope, _ = np.polyfit(x, recent['AD_cum'].values, 1)
+        ad_trend = "rising" if slope > 0 else "falling" if slope < 0 else "flat"
+    else:
+        ad_trend = "insufficient data"
+    
+    # 6. Calculate potential price target (if accumulation confirmed)
+    price_target = zone_high + zone_width
+    
+    # 7. Accumulation confidence score (0-100)
+    score = 0
+    # a) Range-boundness
+    if range_bound_score > 70:
+        score += 25
+    elif range_bound_score > 50:
+        score += 15
+    
+    # b) Spring pattern
+    if spring_detected:
+        score += 25
+    
+    # c) Volume at support (strong buying)
+    if volume_ratio > 1.2:
+        score += 20
+    elif volume_ratio > 1.0:
+        score += 10
+    
+    # d) A/D rising
+    if ad_trend == "rising":
+        score += 20
+    elif ad_trend == "flat":
+        score += 10
+    
+    # e) Volume balance (more up volume)
+    if volume_balance > 0.55:
+        score += 10
+    elif volume_balance > 0.5:
+        score += 5
+    
+    # Cap at 100
+    confidence = min(score, 100)
+    
+    # 8. Return summary
+    summary = {
+        'zone_low': zone_low,
+        'zone_high': zone_high,
+        'zone_width': zone_width,
+        'price_target': price_target,
+        'range_bound_score': range_bound_score,
+        'spring_detected': spring_detected,
+        'volume_at_support_ratio': volume_ratio,
+        'ad_trend': ad_trend,
+        'volume_balance': volume_balance,
+        'confidence': confidence,
+        'latest_price': recent['Close'].iloc[-1],
+        'recent_data': recent
+    }
+    return summary
+
+def plot_accumulation_zone(df, summary, lookback_days=120):
+    """
+    Plot the accumulation zone with price, volume, and A/D line.
+    """
+    recent = summary['recent_data']
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(14, 10), 
+                                         gridspec_kw={'height_ratios': [3, 1, 1]})
+    
+    # Price plot with zone
+    ax1.plot(recent.index, recent['Close'], label='Close Price', color='blue', linewidth=1.5)
+    ax1.axhline(y=summary['zone_low'], color='green', linestyle='--', label='Zone Low')
+    ax1.axhline(y=summary['zone_high'], color='red', linestyle='--', label='Zone High')
+    ax1.fill_between(recent.index, summary['zone_low'], summary['zone_high'], 
+                     alpha=0.1, color='gray', label='Accumulation Zone')
+    ax1.set_ylabel('Price')
+    ax1.legend()
+    ax1.set_title('Accumulation Zone Detection')
+    ax1.grid(True, alpha=0.3)
+    
+    # Volume plot
+    colors = ['green' if recent['Close'].iloc[i] > recent['Open'].iloc[i] else 'red' 
+              for i in range(len(recent))]
+    ax2.bar(recent.index, recent['Volume'], color=colors, alpha=0.6)
+    ax2.axhline(y=recent['Volume'].mean(), color='blue', linestyle='--', label='Avg Volume')
+    ax2.set_ylabel('Volume')
+    ax2.legend()
+    ax2.grid(True, alpha=0.3)
+    
+    # A/D line
+    ax3.plot(recent.index, recent['AD_cum'], color='purple', label='A/D Line')
+    ax3.set_ylabel('A/D Cumulative')
+    ax3.axhline(y=0, color='black', linestyle='-', linewidth=0.5)
+    ax3.legend()
+    ax3.grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    plt.show()
+
+# ---------- RUN THE ANALYSIS ----------
+# Assuming `df` is your main dataframe with columns: Date, Close, High, Low, Volume
+# (If you haven't already, ensure it's sorted by date)
+
+# Make sure 'Date' is datetime
+df['Date'] = pd.to_datetime(df['Date'])
+
+# Run the detection
+summary = find_accumulation_zone(df, lookback_days=120)
+
+# Print the summary
+print("="*60)
+print("🏦 TARGET ACCUMULATION ZONE ANALYSIS")
+print("="*60)
+print(f"Zone Low:       ₹{summary['zone_low']:.2f}")
+print(f"Zone High:      ₹{summary['zone_high']:.2f}")
+print(f"Zone Width:     ₹{summary['zone_width']:.2f}")
+print(f"Price Target:   ₹{summary['price_target']:.2f} (if accumulation confirmed)")
+print(f"Current Price:  ₹{summary['latest_price']:.2f}")
+print(f"Range-bound Score: {summary['range_bound_score']:.1f}%")
+print(f"Spring Pattern Detected: {'Yes ✅' if summary['spring_detected'] else 'No ❌'}")
+print(f"Volume at Support Ratio: {summary['volume_at_support_ratio']:.2f}x")
+print(f"A/D Trend:      {summary['ad_trend']}")
+print(f"Volume Balance: {summary['volume_balance']:.2f} (Up volume share)")
+print(f"\n🔥 Accumulation Confidence Score: {summary['confidence']} / 100")
+
+if summary['confidence'] >= 70:
+    print("\n✅ STRONG ACCUMULATION SIGNAL – The stock appears to be in a smart-money accumulation zone.")
+    print(f"   🎯 Target price: ₹{summary['price_target']:.2f}")
+elif summary['confidence'] >= 40:
+    print("\n🟡 MODERATE ACCUMULATION SIGNAL – Some signs present, but need further confirmation.")
+else:
+    print("\n🔴 WEAK ACCUMULATION SIGNAL – The stock is likely not in an accumulation phase currently.")
+
+# Plot the zone
+plot_accumulation_zone(df, summary)
