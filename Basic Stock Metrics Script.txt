@@ -1,0 +1,33 @@
+# Fetch data from info to find out 52 week high/low,P/E ratio
+ticker_object = yf.Ticker(ticker)
+info_data = ticker_object.info
+
+# fetch today's data for 1 day high/low
+today_df = ticker_object.history(period = '1d')
+day_high = round(today_df['High'].iloc[0],2)
+day_low =round(today_df['Low'].iloc[0],2)
+
+# fetch all time high/low from historical data
+
+all_time_df = ticker_object.history(period = 'max')
+all_time_high = round(all_time_df['High'].max(),2)
+all_time_low = round(all_time_df['Low'].min(),2)
+
+# extract 52 week metrics and P/E ratio
+
+high_52_week = round(info_data.get('fiftyTwoWeekHigh'),2)
+low_52_week = round(info_data.get('fiftyTwoWeekLow'),2)
+pe_ratio = round(info_data.get('trailingPE'),2)
+
+# metrics
+
+print('='*50)
+print(f"--- Metrics for {ticker} ---")
+print('='*50)
+print(f"52-Week High: {high_52_week}")
+print(f"52-Week Low: {low_52_week}")
+print(f"1-Day High: {day_high}")
+print(f"1-Day Low: {day_low}")
+print(f"All-Time High: {all_time_high}")
+print(f"All-Time Low: {all_time_low}")
+print(f"P/E Ratio: {pe_ratio}")
