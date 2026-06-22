@@ -1,0 +1,33 @@
+# Stop Loss Risk assesment :
+
+# 1. Fetch live stock data using yfinance
+ticker_symbol = "MSUMI.NS"  # Change this to your target stock ticker
+ticker_object = yf.Ticker(ticker_symbol)
+info_data = ticker_object.info
+
+# Dynamically fetch current price (falls back to latest close automatically if market is closed)
+current_price = info_data.get("currentPrice")
+
+# Handle case where current price might be missing
+if current_price is None:
+    current_price = info_data.get("previousClose")
+
+last_price = current_price
+
+# Calculate Average True Range (ATR) – typically 14-day
+high_low = df['High'] - df['Low']
+high_close = np.abs(df['High'] - df['Close'].shift())
+low_close = np.abs(df['Low'] - df['Close'].shift())
+ranges = pd.concat([high_low, high_close, low_close], axis=1)
+true_range = np.max(ranges, axis=1)
+atr = true_range.rolling(14).mean().iloc[-1]
+
+# Define stop-loss as 1.5x ATR below current price
+stop_loss = last_price - 1.5 * atr
+
+print(f"Current Price: ₹{last_price:.2f}")
+print(f"14-day ATR: ₹{atr:.2f}")
+print(f"Recommended Stop-Loss (1.5x ATR): ₹{stop_loss:.2f}")
+
+# Interpretation
+print(f"\nIf price falls below ₹{stop_loss:.2f}, the bearish momentum likely continues, and we would reconsider the bullish thesis.")
