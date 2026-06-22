@@ -1,0 +1,26 @@
+import pandas as pd
+import numpy as np
+import yfinance as yf
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# download MSUMI data from yahoo finance
+ticker = "MSUMI.NS"
+df = yf.download(ticker,start = '2021-01-01',multi_level_index = False)
+print(df.head(5))
+print(df.tail(5))
+
+# Stock Returns
+df['returns'] = df['Close'].pct_change()
+print(df['returns'].head(5))
+print(df['returns'].tail(5))
+
+# Stock cumulative return
+df['cumulative return']=(1 + df['returns']).cumprod()
+print(df['cumulative return'].head(5))
+print(df['cumulative return'].tail(5))
+
+# list of Columns in the dataset 
+print(df.columns.tolist())
+df = df.reset_index()
+print(df.columns.tolist())
