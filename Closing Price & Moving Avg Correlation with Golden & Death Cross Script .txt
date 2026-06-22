@@ -1,0 +1,136 @@
+# If columns are multi-index, flatten them
+if isinstance(df.columns, pd.MultiIndex):
+    df.columns = df.columns.get_level_values(0)
+
+df = df.reset_index()
+
+# Moving averages
+df['20DMA'] = df['Close'].rolling(20).mean()
+df['50DMA'] = df['Close'].rolling(50).mean()
+df['200DMA'] = df['Close'].rolling(200).mean()
+
+# Conditions
+df['20_above_200'] = df['20DMA'] > df['200DMA']
+df['50_above_200'] = df['50DMA'] > df['200DMA']
+df['both_above_200'] = df['20_above_200'] & df['50_above_200']
+
+df['20_below_200'] = df['20DMA'] < df['200DMA']
+df['50_below_200'] = df['50DMA'] < df['200DMA']
+df['both_below_200'] = df['20_below_200'] & df['50_below_200']
+
+# Safe previous-state logic
+prev_above = df['both_above_200'].shift(1).fillna(False).astype(bool)
+prev_below = df['both_below_200'].shift(1).fillna(False).astype(bool)
+
+df['golden_cross'] = df['both_above_200'] & (~prev_above)
+df['death_cross'] = df['both_below_200'] & (~prev_below)
+
+# Extract events
+golden_crosses = df.loc[df['golden_cross'], ['Date', 'Close', '20DMA', '50DMA', '200DMA']].copy()
+death_crosses = df.loc[df['death_cross'], ['Date', 'Close', '20DMA', '50DMA', '200DMA']].copy()
+
+print("=" * 70)
+print("GOLDEN CROSS EVENTS")
+print("=" * 70)
+
+trend_summary = []
+
+for _, row in golden_crosses.iterrows():
+    start_idx = df.index[df['Date'] == row['Date']][0]
+
+    future_death = df.loc[start_idx + 1:]
+    future_death = future_death[future_death['death_cross']]
+
+    if not future_death.empty:
+        end_idx = future_death.index[0]
+    else:
+        end_idx = df.index[-1]
+
+    trend_period = df.loc[start_idx:end_idx].copy()
+
+    peak_idx = trend_period['Close'].idxmax()
+    peak_price = df.loc[peak_idx, 'Close']
+    peak_date = df.loc[peak_idx, 'Date']
+
+    trading_days = len(trend_period)
+    months = trading_days / 21
+
+    return_pct = ((peak_price - row['Close']) / row['Close']) * 100
+
+    trend_summary.append({
+        'golden_cross_date': row['Date'],
+        'golden_cross_price': row['Close'],
+        'peak_date': peak_date,
+        'peak_price': peak_price,
+        'trading_days_uptrend': trading_days,
+        'months_uptrend': months,
+        'return_pct_to_peak': return_pct
+    })
+
+    print(f"\nGolden Cross Date : {row['Date'].date()}")
+    print(f"Cross Price       : {row['Close']:.2f}")
+    print(f"Peak Date         : {peak_date.date()}")
+    print(f"Peak Price        : {peak_price:.2f}")
+    print(f"Trend Duration    : {trading_days} trading days ({months:.1f} months)")
+    print(f"Rise to Peak      : {return_pct:.2f}%")
+
+trend_df = pd.DataFrame(trend_summary)
+
+print("\n" + "=" * 70)
+print("UPTREND SUMMARY")
+print("=" * 70)
+
+if not trend_df.empty:
+    print(trend_df)
+    print("\nAverage trend duration (days):", round(trend_df['trading_days_uptrend'].mean(), 2))
+    print("Average trend duration (months):", round(trend_df['months_uptrend'].mean(), 2))
+    print("Average return to peak (%):", round(trend_df['return_pct_to_peak'].mean(), 2))
+else:
+    print("No complete golden-cross to death-cross cycles found.")
+
+# Correlation analysis
+corr_df = df[['Close', '20DMA', '50DMA', '200DMA']].dropna()
+corr_matrix = corr_df.corr()
+
+print("\n" + "=" * 70)
+print("CORRELATION MATRIX")
+print("=" * 70)
+print(corr_matrix)
+
+# Plot
+plt.figure(figsize=(14, 7))
+plt.plot(df['Date'], df['Close'], label='Close', linewidth=1.5)
+plt.plot(df['Date'], df['20DMA'], label='20DMA', alpha=0.8)
+plt.plot(df['Date'], df['50DMA'], label='50DMA', alpha=0.8)
+plt.plot(df['Date'], df['200DMA'], label='200DMA', alpha=0.8)
+
+plt.scatter(df.loc[df['golden_cross'], 'Date'],
+            df.loc[df['golden_cross'], 'Close'],
+            color='green', label='Golden Cross', s=80, marker='^')
+
+plt.scatter(df.loc[df['death_cross'], 'Date'],
+            df.loc[df['death_cross'], 'Close'],
+            color='red', label='Death Cross', s=80, marker='v')
+
+plt.title(f"{ticker} Close Price with 20DMA, 50DMA, 200DMA")
+plt.xlabel("Date")
+plt.ylabel("Price")
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
+
+# Moving Averages
+df['SMA_50'] = df['Close'].rolling(50).mean()
+df['SMA_200'] = df['Close'].rolling(200).mean()
+
+latest = df.iloc[-1]
+
+if (latest['Close'] > latest['SMA_50']) and (latest['SMA_50'] > latest['SMA_200']):
+    print("🟢 BULLISH TREND")
+
+elif (latest['Close'] < latest['SMA_50']) and (latest['SMA_50'] < latest['SMA_200']):
+    print("🔴 BEARISH TREND")
+
+else:
+    print("🟡 SIDEWAYS TREND")
