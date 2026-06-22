@@ -1,0 +1,61 @@
+#=====================================================
+# Closing price trend
+# Upward trend --> Bullish
+# Downward trend --> Bearish
+# Flat trend --> Consolidation
+# =====================================================
+
+sns.set_style('whitegrid')
+plt.figure(figsize=(14,6))
+plt.plot(df['Date'],df['Close'])
+plt.title('Closing Price Trend')
+plt.xlabel('Date')
+plt.ylabel('Close Price')
+plt.grid(True)
+plt.show()
+
+# =====================================================
+# Basic Statistics for Close Price
+# =====================================================
+close_stats = df['Close'].describe()
+
+print("=" * 50)
+print("BASIC STATISTICS FOR CLOSE PRICE")
+print("=" * 50)
+print(f"Mean (Average Price):      {close_stats['mean']:.2f}")
+print(f"Std (Volatility/Risk):     {close_stats['std']:.2f}")
+print(f"Min (Lowest Price):        {close_stats['min']:.2f}")
+print(f"Max (Highest Price):       {close_stats['max']:.2f}")
+print(f"50% (Median Price):        {close_stats['50%']:.2f}")
+print("=" * 50)
+
+# =====================================================
+# Calculate Moving Averages (DMA = Daily Moving Average)
+# =====================================================
+df['20DMA'] = df['Close'].rolling(window=20).mean()   # 20-day moving average
+df['50DMA'] = df['Close'].rolling(window=50).mean()   # 50-day moving average
+df['200DMA'] = df['Close'].rolling(window=200).mean() # 200-day moving average
+
+latest = df.iloc[-1]
+if latest['Close'] > latest['20DMA'] and latest['50DMA'] > latest['200DMA']:
+    print("🟢 BULLISH TREND")
+elif latest['Close'] < latest['20DMA'] and latest['50DMA'] < latest['200DMA']:
+    print("🔴 BEARISH TREND")
+
+# =====================================================
+#Optional: Plot the data
+# =====================================================
+
+plt.figure(figsize=(14, 7))
+plt.plot(df['Date'], df['Close'], label='Close Price', linewidth=1)
+plt.plot(df['Date'], df['20DMA'], label='20DMA', linewidth=1, alpha=0.7)
+plt.plot(df['Date'], df['50DMA'], label='50DMA', linewidth=1, alpha=0.7)
+plt.plot(df['Date'], df['200DMA'], label='200DMA', linewidth=1, alpha=0.7)
+plt.title(f'{ticker} Price & Moving Averages')
+plt.xlabel('Date')
+plt.ylabel('Price')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.savefig('stock_dma_analysis.png')
+plt.show()
