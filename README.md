@@ -1,0 +1,1 @@
+# MSUMI.NS_Stock_Quantitative_Analysis
