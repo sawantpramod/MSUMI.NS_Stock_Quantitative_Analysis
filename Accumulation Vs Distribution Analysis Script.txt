@@ -1,0 +1,25 @@
+# Accumulation vs Distribution
+# This helps determine whether investors are buying or selling.
+up_volume = df.loc[
+    df['Close'] > df['Open'],
+    'Volume'
+].sum()
+
+down_volume = df.loc[
+    df['Close'] < df['Open'],
+    'Volume'
+].sum()
+
+print("\nACCUMULATION / DISTRIBUTION")
+print("-"*60)
+
+print(f"Buying Volume : {up_volume:,.0f}")
+print(f"Selling Volume: {down_volume:,.0f}")
+
+if up_volume > down_volume:
+    print("🟢 Accumulation Phase")
+    print("Buyers are more active.")
+
+else:
+    print("🔴 Distribution Phase")
+    print("Sellers are more active.")
