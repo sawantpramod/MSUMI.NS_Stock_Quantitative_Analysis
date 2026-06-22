@@ -1,0 +1,119 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# ---------- Ensure 'Close' has no missing values ----------
+df = df.dropna(subset=['Close'])   # optional, but safe
+
+# ---------- Create price states ----------
+bins = [-np.inf, 34, 36, 38, 40, np.inf]
+labels = ['<34', '34-36', '36-38', '38-40', '≥40']
+df['state'] = pd.cut(df['Close'], bins=bins, labels=labels, right=False)
+
+# Remove any rows where state is NaN (shouldn't happen if bins cover all values)
+df = df.dropna(subset=['state'])
+
+# ---------- Build transition matrix ----------
+# Shift to get previous state; first row becomes NaN
+df['prev_state'] = df['state'].shift()
+
+# Drop rows where either state or prev_state is NaN (i.e., the first row)
+df_clean = df.dropna(subset=['state', 'prev_state'])
+
+# Build count matrix from clean data (no NaN)
+trans_counts = pd.crosstab(
+    df_clean['prev_state'],
+    df_clean['state'],
+    dropna=False
+)
+
+# Convert to probabilities
+trans_matrix = trans_counts.div(trans_counts.sum(axis=1), axis=0).fillna(0)
+
+# Ensure all expected states are present (in case some never occurred)
+all_states = labels
+for state in all_states:
+    if state not in trans_matrix.index:
+        trans_matrix.loc[state] = 0
+    if state not in trans_matrix.columns:
+        trans_matrix[state] = 0
+
+# Reorder to match labels order
+trans_matrix = trans_matrix.loc[all_states, all_states]
+
+# Make absorbing states: '<34' and '≥40'
+for state in ['<34', '≥40']:
+    trans_matrix.loc[state] = 0
+    trans_matrix.loc[state, state] = 1.0
+
+# Ensure rows sum to 1 (floating-point safety)
+trans_matrix = trans_matrix.div(trans_matrix.sum(axis=1), axis=0).fillna(0)
+
+print("Transition Matrix (row = current, column = next):")
+print(trans_matrix.round(2))
+
+# ---------- Hitting probability using NumPy ----------
+def hitting_probability(start_state, n_days=252):
+    """
+    Returns cumulative probability of hitting '≥40' within n_days,
+    starting from start_state.
+    """
+    # Special cases
+    if start_state == '≥40':
+        return [1.0] * n_days
+    if start_state == '<34':
+        return [0.0] * n_days
+
+    # Ensure start_state is in the matrix
+    if start_state not in trans_matrix.index:
+        raise ValueError(f"State '{start_state}' not found in transition matrix.")
+
+    state_order = trans_matrix.index.tolist()   # all strings, no NaN
+    start_idx = state_order.index(start_state)
+    target_idx = state_order.index('≥40')
+
+    prob_vec = np.zeros(len(state_order))
+    prob_vec[start_idx] = 1.0
+
+    trans_arr = trans_matrix.values  # shape (N, N)
+
+    cumulative = []
+    for _ in range(1, n_days + 1):
+        prob_vec = prob_vec @ trans_arr   # 1xN @ NxN
+        cumulative.append(prob_vec[target_idx])
+
+    return cumulative
+
+# ---------- Get current state ----------
+current_state = df['state'].iloc[-1]   # last row after dropping NaNs
+print(f"\nCurrent Price: ₹{df['Close'].iloc[-1]:.2f} -> Current State: {current_state}")
+
+# ---------- Compute hitting probabilities ----------
+hit_probs = hitting_probability(current_state, n_days=252)
+final_prob = hit_probs[-1] * 100
+print(f"\n📊 Probability of hitting ₹40 within 252 trading days: {final_prob:.1f}%")
+
+# ---------- Plot ----------
+plt.figure(figsize=(12, 5))
+plt.plot(range(1, 253), np.array(hit_probs) * 100, linewidth=2)
+plt.axhline(y=50, color='red', linestyle='--', label='50% Probability')
+plt.axhline(y=75, color='green', linestyle='--', label='75% Probability')
+plt.xlabel('Trading Days')
+plt.ylabel('Cumulative Probability of Hitting ₹40')
+plt.title('Markov Chain Forecast: Probability of Reaching ₹40 Over Time')
+plt.grid(True, alpha=0.3)
+plt.legend()
+plt.show()
+
+# ---------- Expected time to hit thresholds ----------
+def days_to_probability(target_prob, hit_probs, n_days=252):
+    for day, prob in enumerate(hit_probs, start=1):
+        if prob >= target_prob:
+            return day
+    return n_days
+
+print("\n⏳ Estimated Timelines:")
+for target in [0.25, 0.50, 0.75]:
+    days = days_to_probability(target, hit_probs)
+    months = days / 21
+    print(f"  {int(target*100)}% probability: ~{days} trading days (~{months:.1f} months)")
