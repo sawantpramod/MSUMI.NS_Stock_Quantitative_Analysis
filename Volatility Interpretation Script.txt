@@ -1,0 +1,107 @@
+#Annualized Volatility	Interpretation
+# <15%	Low Risk
+# 15%-25%	Moderate Risk
+# 25%-40%	High Risk
+# >40%	Very High Risk
+
+
+annualized_volatility = (
+    df['returns'].std()
+    * np.sqrt(252)
+    * 100
+)
+
+print(f"\nAnnualized Volatility: {annualized_volatility:.2f}%")
+
+# Detect Volatility Regimes
+
+vol_mean = df['volatility_30'].mean()
+vol_std = df['volatility_30'].std()
+
+latest_vol = df['volatility_30'].iloc[-1]
+
+print("\nMARKET REGIME")
+print("-"*60)
+
+if latest_vol > vol_mean + vol_std:
+    print("🔴 High Volatility Regime")
+
+elif latest_vol < vol_mean - vol_std:
+    print("🟢 Low Volatility Regime")
+
+else:
+    print("🟡 Normal Volatility Regime")
+
+# drawdown analysis
+
+# Calculate Drawdown
+df['cummax'] = df['Close'].cummax()
+
+df['drawdown'] = (
+    df['Close'] -
+    df['cummax']
+) / df['cummax']
+
+# Plot
+plt.figure(figsize=(14,6))
+
+plt.plot(
+    df['Date'],
+    df['drawdown'] * 100,
+    linewidth=2
+)
+
+plt.axhline(
+    y=0,
+    linestyle='--',
+    color='red',
+    label='Previous High'
+)
+
+plt.title('Drawdown Analysis')
+plt.xlabel('Date')
+plt.ylabel('Drawdown (%)')
+plt.legend()
+plt.grid(True)
+
+plt.show()
+
+# =====================================
+# INTERPRETATION SECTION
+# =====================================
+
+current_drawdown = df['drawdown'].iloc[-1] * 100
+max_drawdown = df['drawdown'].min() * 100
+avg_drawdown = df['drawdown'].mean() * 100
+
+worst_date = df.loc[
+    df['drawdown'].idxmin(),
+    'Date'
+]
+
+print("="*60)
+print("DRAWDOWN ANALYSIS")
+print("="*60)
+
+print(f"Current Drawdown : {current_drawdown:.2f}%")
+print(f"Maximum Drawdown : {max_drawdown:.2f}%")
+print(f"Average Drawdown : {avg_drawdown:.2f}%")
+print(f"Worst Drawdown Date : {worst_date}")
+
+print("\nINTERPRETATION")
+print("-"*60)
+
+if max_drawdown > -10:
+    print("🟢 Excellent Capital Protection")
+
+elif max_drawdown > -20:
+    print("🟢 Healthy Drawdown Profile")
+
+elif max_drawdown > -35:
+    print("🟡 Moderate Risk Stock")
+
+elif max_drawdown > -50:
+    print("🟠 High Risk Stock")
+
+else:
+    print("🔴 Very High Risk Stock")

@@ -1,0 +1,84 @@
+# Calculate 30-Day Rolling Volatility
+df['volatility_30'] = (
+    df['returns']
+    .rolling(window=30)
+    .std()
+)
+
+# Plot
+plt.figure(figsize=(14,6))
+
+plt.plot(
+    df['Date'],
+    df['volatility_30'] * 100,
+    linewidth=2
+)
+
+plt.axhline(
+    y=df['volatility_30'].mean()*100,
+    linestyle='--',
+    color='red',
+    label='Average Volatility'
+)
+
+plt.title('30-Day Rolling Volatility')
+plt.xlabel('Date')
+plt.ylabel('Volatility (%)')
+plt.legend()
+plt.grid(True)
+
+plt.show()
+
+# =====================================
+# Interpretation Section
+# =====================================
+
+latest_vol = df['volatility_30'].iloc[-1] * 100
+avg_vol = df['volatility_30'].mean() * 100
+max_vol = df['volatility_30'].max() * 100
+min_vol = df['volatility_30'].min() * 100
+
+print("="*60)
+print("30-DAY ROLLING VOLATILITY ANALYSIS")
+print("="*60)
+
+print(f"Current Volatility : {latest_vol:.2f}%")
+print(f"Average Volatility : {avg_vol:.2f}%")
+print(f"Maximum Volatility : {max_vol:.2f}%")
+print(f"Minimum Volatility : {min_vol:.2f}%")
+
+print("\nINTERPRETATION")
+print("-"*60)
+
+if latest_vol < 1:
+    print("🟢 Very Low Risk Stock")
+
+elif latest_vol < 2:
+    print("🟢 Low Risk Stock")
+
+elif latest_vol < 4:
+    print("🟡 Moderate Risk Stock")
+
+elif latest_vol < 6:
+    print("🟠 High Risk Stock")
+
+else:
+    print("🔴 Very High Risk Stock")
+
+# trend in volatility
+latest = df['volatility_30'].iloc[-1]
+previous = df['volatility_30'].iloc[-10]
+
+print("\nVOLATILITY TREND")
+print("-"*60)
+
+if latest > previous:
+    print("📈 Volatility Increasing")
+    print("Risk and uncertainty are rising.")
+
+elif latest < previous:
+    print("📉 Volatility Decreasing")
+    print("Stock is becoming more stable.")
+
+else:
+    print("➡️ Volatility Stable")

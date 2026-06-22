@@ -1,0 +1,113 @@
+# Calculate 30-Day Rolling Return
+df['rolling_return_30'] = (
+    df['Close'] /
+    df['Close'].shift(30)
+) - 1
+
+# Plot
+plt.figure(figsize=(14,6))
+
+plt.plot(
+    df['Date'],
+    df['rolling_return_30'] * 100,
+    linewidth=2
+)
+
+plt.axhline(
+    y=0,
+    color='red',
+    linestyle='--',
+    label='Break-even'
+)
+
+plt.title('30-Day Rolling Returns')
+plt.xlabel('Date')
+plt.ylabel('Return (%)')
+plt.legend()
+plt.grid(True)
+
+plt.show()
+
+# =====================================
+# Interpretation Section
+# =====================================
+
+latest_return = df['rolling_return_30'].iloc[-1] * 100
+avg_return = df['rolling_return_30'].mean() * 100
+max_return = df['rolling_return_30'].max() * 100
+min_return = df['rolling_return_30'].min() * 100
+
+print("="*60)
+print("30-DAY ROLLING RETURN ANALYSIS")
+print("="*60)
+
+print(f"Latest 30-Day Return  : {latest_return:.2f}%")
+print(f"Average 30-Day Return : {avg_return:.2f}%")
+print(f"Best 30-Day Return    : {max_return:.2f}%")
+print(f"Worst 30-Day Return   : {min_return:.2f}%")
+
+print("\nINTERPRETATION")
+print("-"*60)
+
+# Current momentum
+if latest_return > 20:
+    print("🟢 Very Strong Bullish Momentum")
+
+elif latest_return > 10:
+    print("🟢 Strong Bullish Momentum")
+
+elif latest_return > 0:
+    print("🟡 Mild Bullish Momentum")
+
+elif latest_return > -10:
+    print("🟠 Mild Bearish Momentum")
+
+else:
+    print("🔴 Strong Bearish Momentum")
+
+# Consistency
+positive_periods = (
+    df['rolling_return_30'] > 0
+).sum()
+
+negative_periods = (
+    df['rolling_return_30'] < 0
+).sum()
+
+success_rate = (
+    positive_periods /
+    (positive_periods + negative_periods)
+) * 100
+
+print(f"\nPositive 30-Day Periods : {positive_periods}")
+print(f"Negative 30-Day Periods : {negative_periods}")
+print(f"Success Rate            : {success_rate:.2f}%")
+
+if success_rate > 70:
+    print("🟢 Strong Uptrend Consistency")
+
+elif success_rate > 55:
+    print("🟡 Moderate Uptrend")
+
+else:
+    print("🔴 Weak Trend Consistency")
+
+# Identify Trend Phase
+
+latest = df['rolling_return_30'].iloc[-1]
+previous = df['rolling_return_30'].iloc[-5]
+
+print("\nTREND PHASE ANALYSIS")
+print("-"*60)
+
+if latest > previous and latest > 0:
+    print("📈 Bullish Trend Strengthening")
+
+elif latest < previous and latest > 0:
+    print("⚠️ Bullish Trend Weakening")
+
+elif latest < previous and latest < 0:
+    print("📉 Bearish Trend Strengthening")
+
+else:
+    print("🔄 Possible Recovery Phase")
