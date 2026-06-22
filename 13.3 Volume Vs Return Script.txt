@@ -1,0 +1,50 @@
+# Scatter Plot
+plt.figure(figsize=(10,6))
+
+plt.scatter(
+    df['Volume'],
+    df['returns'],
+    alpha=0.5
+)
+
+plt.xlabel('Volume')
+plt.ylabel('Returns')
+plt.title('Volume vs Returns')
+
+plt.grid(True)
+plt.show()
+
+# ==================================
+# INTERPRETATION SECTION
+# ==================================
+
+correlation = df['Volume'].corr(df['returns'])
+
+print("="*60)
+print("VOLUME vs RETURNS ANALYSIS")
+print("="*60)
+
+print(f"Correlation: {correlation:.4f}")
+
+print("\nINTERPRETATION")
+print("-"*60)
+
+if correlation > 0.5:
+    print("🟢 Strong Positive Relationship")
+    print("Higher volume is associated with higher returns.")
+
+elif correlation > 0.2:
+    print("🟡 Moderate Positive Relationship")
+    print("Volume has some influence on returns.")
+
+elif correlation > -0.2:
+    print("➡️ Weak or No Relationship")
+    print("Volume alone does not explain stock returns.")
+
+elif correlation > -0.5:
+    print("🟠 Moderate Negative Relationship")
+    print("Higher volume often occurs during selling pressure.")
+
+else:
+    print("🔴 Strong Negative Relationship")
+    print("Volume spikes are associated with negative returns.")

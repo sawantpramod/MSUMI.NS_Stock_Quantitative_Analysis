@@ -1,0 +1,100 @@
+# Institutional Activity Analysis
+# Top 10% volume days
+
+high_volume_threshold = df['Volume'].quantile(0.90)
+
+high_volume_days = df[
+    df['Volume'] >= high_volume_threshold
+]
+
+avg_high_volume_return = (
+    high_volume_days['returns'].mean() * 100
+)
+
+print("\nHIGH VOLUME DAY ANALYSIS")
+print("-"*60)
+
+print(
+    f"Average Return on High Volume Days: "
+    f"{avg_high_volume_return:.2f}%"
+)
+
+if avg_high_volume_return > 0:
+    print("🟢 High volume is generally associated with buying.")
+
+else:
+    print("🔴 High volume is generally associated with selling.")
+
+#Volume Breakout Analysis
+df['volume_ma20'] = df['Volume'].rolling(20).mean()
+
+volume_breakout_days = df[
+    df['Volume'] > (1.5 * df['volume_ma20'])
+]
+
+breakout_return = (
+    volume_breakout_days['returns'].mean() * 100
+)
+
+print("\nVOLUME BREAKOUT ANALYSIS")
+print("-"*60)
+
+print(
+    f"Average Return During Volume Breakouts: "
+    f"{breakout_return:.2f}%"
+)
+
+if breakout_return > 0:
+    print("🟢 Volume spikes support bullish breakouts.")
+
+else:
+    print("🔴 Volume spikes often occur during declines.")
+
+# Quadrant Analysis (Professional Approach)
+volume_median = df['Volume'].median()
+return_median = df['returns'].median()
+
+high_vol_high_ret = len(
+    df[
+        (df['Volume'] > volume_median) &
+        (df['returns'] > return_median)
+    ]
+)
+
+high_vol_low_ret = len(
+    df[
+        (df['Volume'] > volume_median) &
+        (df['returns'] <= return_median)
+    ]
+)
+
+print("\nQUADRANT ANALYSIS")
+print("-"*60)
+
+print(f"High Volume + High Return Days : {high_vol_high_ret}")
+print(f"High Volume + Low Return Days  : {high_vol_low_ret}")
+
+if high_vol_high_ret > high_vol_low_ret:
+    print("🟢 Accumulation Dominates")
+
+else:
+    print("🔴 Distribution Dominates")
+
+# Trend Strength Indicator
+volume_return_score = (
+    correlation * 100
+)
+
+print("\nVOLUME CONFIRMATION SCORE")
+print("-"*60)
+
+print(f"Score: {volume_return_score:.2f}")
+
+if volume_return_score > 30:
+    print("🟢 Strong Volume Confirmation")
+
+elif volume_return_score > 10:
+    print("🟡 Moderate Volume Confirmation")
+
+else:
+    print("🔴 Weak Volume Confirmation")

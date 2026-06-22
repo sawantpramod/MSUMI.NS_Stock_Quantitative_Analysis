@@ -1,0 +1,24 @@
+# Detect Accumulation Potential
+high_volume_days = (
+    df['Volume'] >
+    df['Volume'].quantile(0.75)
+)
+
+avg_return_high_volume = (
+    df.loc[high_volume_days, 'returns']
+    .mean() * 100
+)
+
+print("\nACCUMULATION ANALYSIS")
+print("-"*60)
+
+print(
+    f"Average Return on High-Volume Days: "
+    f"{avg_return_high_volume:.2f}%"
+)
+
+if avg_return_high_volume > 0:
+    print("🟢 High Volume Associated With Buying")
+
+else:
+    print("🔴 High Volume Associated With Selling")

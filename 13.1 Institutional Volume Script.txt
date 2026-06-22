@@ -1,0 +1,60 @@
+# Detect Institutional Volume Spikes
+#  Large investors often create abnormal volume.
+# 95th percentile threshold
+
+volume_threshold = df['Volume'].quantile(0.95)
+
+spike_days = (
+    df['Volume'] > volume_threshold
+).sum()
+
+print("\nUNUSUAL VOLUME ANALYSIS")
+print("-"*60)
+
+print(f"Volume Spike Days : {spike_days}")
+
+if spike_days > len(df) * 0.05:
+    print("🚀 Frequent Institutional Activity")
+
+else:
+    print("🟢 Normal Trading Behaviour")
+
+# Liquidity Analysis
+avg_volume = df['Volume'].mean()
+
+print("\nLIQUIDITY ANALYSIS")
+print("-"*60)
+
+if avg_volume > 10000000:
+    print("🟢 Very High Liquidity")
+
+elif avg_volume > 1000000:
+    print("🟢 Good Liquidity")
+
+elif avg_volume > 100000:
+    print("🟡 Moderate Liquidity")
+
+else:
+    print("🔴 Low Liquidity Stock")
+
+
+# Volume Stability Analysis
+#  Measures how predictable volume is
+volume_cv = (
+    df['Volume'].std() /
+    df['Volume'].mean()
+)
+
+print("\nVOLUME STABILITY")
+print("-"*60)
+
+print(f"Coefficient of Variation: {volume_cv:.2f}")
+
+if volume_cv < 0.5:
+    print("🟢 Stable Volume Pattern")
+
+elif volume_cv < 1:
+    print("🟡 Moderate Volume Variability")
+
+else:
+    print("🔴 Highly Unstable Volume Pattern")
