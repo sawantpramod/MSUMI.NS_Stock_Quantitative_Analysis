@@ -1,0 +1,83 @@
+# This Price vs Volume chart is one of the most important charts in technical analysis because it helps answer:
+# "Is the price movement supported by strong trading activity?"
+# Volume acts as a confirmation indicator for price movements.
+
+# Price vs Volume Chart
+fig, ax1 = plt.subplots(figsize=(15,6))
+
+# Price Line
+ax1.plot(
+    df['Date'],
+    df['Close'],
+    linewidth=2,
+    label='Close Price'
+)
+
+ax1.set_ylabel('Price')
+
+# Volume Bars
+ax2 = ax1.twinx()
+
+ax2.bar(
+    df['Date'],
+    df['Volume'],
+    alpha=0.3
+)
+
+ax2.set_ylabel('Volume')
+
+plt.title('Price vs Volume Analysis')
+plt.grid(True)
+plt.show()
+
+# =====================================
+# INTERPRETATION SECTION
+# =====================================
+
+latest_price = df['Close'].iloc[-1]
+price_30d_ago = df['Close'].iloc[-30]
+
+price_change = (
+    (latest_price - price_30d_ago)
+    / price_30d_ago
+) * 100
+
+latest_volume = df['Volume'].iloc[-1]
+avg_volume = df['Volume'].rolling(30).mean().iloc[-1]
+
+volume_change = (
+    (latest_volume - avg_volume)
+    / avg_volume
+) * 100
+
+print("="*60)
+print("PRICE vs VOLUME ANALYSIS")
+print("="*60)
+
+print(f"30-Day Price Change : {price_change:.2f}%")
+print(f"Current Volume      : {latest_volume:,.0f}")
+print(f"30-Day Avg Volume   : {avg_volume:,.0f}")
+print(f"Volume Difference   : {volume_change:.2f}%")
+
+print("\nINTERPRETATION")
+print("-"*60)
+
+# Price-Volume Relationship
+if price_change > 0 and volume_change > 20:
+    print("🟢 Strong Bullish Confirmation")
+    print("Price is rising with above-average volume.")
+
+elif price_change > 0 and volume_change < 0:
+    print("🟡 Weak Bullish Trend")
+    print("Price is rising but volume is falling.")
+
+elif price_change < 0 and volume_change > 20:
+    print("🔴 Strong Bearish Confirmation")
+    print("Price is falling with heavy selling volume.")
+
+elif price_change < 0 and volume_change < 0:
+    print("🟠 Weak Bearish Trend")
+    print("Price is falling but selling pressure is low.")
+
+else:
+    print("🟡 Neutral Market Condition")

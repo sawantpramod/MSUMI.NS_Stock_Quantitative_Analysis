@@ -1,0 +1,49 @@
+# Advanced Volume Confirmation Analysis
+# Daily Price Change
+df['price_change'] = df['Close'].pct_change()
+
+# Average Volume
+avg_volume = df['Volume'].mean()
+
+# High Volume Days
+high_volume_days = df[df['Volume'] > avg_volume]
+
+positive_high_volume = (
+    high_volume_days['price_change'] > 0
+).sum()
+
+negative_high_volume = (
+    high_volume_days['price_change'] < 0
+).sum()
+
+print("\nHIGH VOLUME ANALYSIS")
+print("-"*60)
+
+print(f"High Volume Up Days   : {positive_high_volume}")
+print(f"High Volume Down Days : {negative_high_volume}")
+
+if positive_high_volume > negative_high_volume:
+    print("🟢 Buyers dominate during high-volume sessions.")
+
+else:
+    print("🔴 Sellers dominate during high-volume sessions.")
+
+
+# Institutional Activity Detection
+df['vol_ma_20'] = df['Volume'].rolling(20).mean()
+
+latest_volume = df['Volume'].iloc[-1]
+latest_vol_ma = df['vol_ma_20'].iloc[-1]
+
+print("\nINSTITUTIONAL ACTIVITY")
+print("-"*60)
+
+if latest_volume > latest_vol_ma * 2:
+    print("🚀 Unusual Volume Spike")
+    print("Possible institutional participation.")
+
+elif latest_volume > latest_vol_ma * 1.5:
+    print("📈 Above Normal Activity")
+
+else:
+    print("➡️ Normal Trading Activity")
