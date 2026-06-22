@@ -1,0 +1,90 @@
+import numpy as np
+
+def interpret_risk_metrics(max_drawdown, avg_duration, max_duration, sharpe_ratio):
+    """
+    Prints an interpretation of common risk/return metrics.
+    
+    Parameters:
+    -----------
+    max_drawdown : float (e.g., -0.25 for -25%)
+    avg_duration : float (months)
+    max_duration : float (months)
+    sharpe_ratio : float
+    """
+    print("\n" + "="*60)
+    print(" RISK / PERFORMANCE INTERPRETATION")
+    print("="*60)
+    
+    # ---- Maximum Drawdown ----
+    dd_abs = abs(max_drawdown) * 100
+    if dd_abs < 10:
+        dd_grade = "excellent (low risk)"
+    elif dd_abs < 20:
+        dd_grade = "good (moderate)"
+    elif dd_abs < 35:
+        dd_grade = "acceptable (high but typical for equities)"
+    else:
+        dd_grade = "severe (extreme risk – may indicate poor strategy/market conditions)"
+    
+    print(f"\n📉 Maximum Drawdown: {max_drawdown:.2%}")
+    print(f"   → This is {dd_grade}.")
+    print("   (A drawdown of 20–35% is common for broad equity indices during recessions.)")
+    
+    # ---- Drawdown Durations ----
+    if avg_duration == 0 and max_duration == 0:
+        print("\n⏳ No drawdown periods detected (strategy never went underwater).")
+    else:
+        print(f"\n⏳ Average Recovery Time: {avg_duration:.2f} months")
+        if avg_duration < 3:
+            rec_grade = "very fast recovery"
+        elif avg_duration < 6:
+            rec_grade = "reasonable recovery"
+        elif avg_duration < 12:
+            rec_grade = "slow recovery (may test patience)"
+        else:
+            rec_grade = "extremely slow recovery (could signal structural issues)"
+        print(f"   → This is {rec_grade}.")
+        
+        print(f"\n⏳ Longest Recovery Time: {max_duration:.2f} months")
+        if max_duration < 6:
+            max_rec_grade = "short-lived drawdowns"
+        elif max_duration < 18:
+            max_rec_grade = "typical for equity strategies"
+        else:
+            max_rec_grade = "prolonged drawdown – check if strategy can survive such periods"
+        print(f"   → This indicates {max_rec_grade}.")
+    
+    # ---- Sharpe Ratio ----
+    print(f"\n📊 Sharpe Ratio: {sharpe_ratio:.2f}")
+    if sharpe_ratio < 0:
+        sharpe_grade = "negative (return below risk-free – not compensating for risk)"
+    elif sharpe_ratio < 0.5:
+        sharpe_grade = "poor (insufficient risk-adjusted return)"
+    elif sharpe_ratio < 1.0:
+        sharpe_grade = "acceptable (typical for many diversified strategies)"
+    elif sharpe_ratio < 2.0:
+        sharpe_grade = "good (attractive risk-adjusted performance)"
+    else:
+        sharpe_grade = "excellent (very strong risk-adjusted returns)"
+    print(f"   → This is considered {sharpe_grade}.")
+    print("   (Benchmark: S&P 500 historically ~0.5–0.7; hedge funds often target >1.0.)")
+    
+    # ---- Overall Summary ----
+    print("\n" + "-"*60)
+    print("📌 OVERALL ASSESSMENT:")
+    # Combine grades into a simple summary
+    if dd_abs < 20 and sharpe_ratio > 0.8 and avg_duration < 6:
+        summary = "Strong risk management. The strategy shows controlled drawdowns, quick recoveries, and decent risk-adjusted returns."
+    elif dd_abs > 35 or sharpe_ratio < 0 or max_duration > 24:
+        summary = "High-risk profile. Consider reviewing position sizing, diversification, or the underlying strategy logic."
+    else:
+        summary = "Moderate risk profile. Acceptable for most equity strategies, but monitor drawdown depth and recovery times."
+    print(f"   {summary}")
+    print("="*60 + "\n")
+
+
+# ============== Example usage with your existing code ==============
+# (Assuming you have already computed the variables:
+#  max_drawdown, avg_duration, max_duration, sharpe_ratio)
+
+interpret_risk_metrics(max_drawdown, avg_duration, max_duration, sharpe_ratio)

@@ -1,0 +1,68 @@
+# Ensure date is datetime
+df['Date'] = pd.to_datetime(df['Date'])
+
+# Wealth Index
+df['wealth_index'] = (1 + df['returns']).cumprod()
+
+# Running Peak
+df['peak'] = df['wealth_index'].cummax()
+
+# Drawdown
+df['drawdown'] = (df['wealth_index'] - df['peak']) / df['peak']
+
+# Maximum Drawdown
+max_drawdown = df['drawdown'].min()
+
+# --------------------------
+# Drawdown Duration
+# --------------------------
+
+df['underwater'] = df['drawdown'] < 0
+
+durations = []
+start = None
+
+for i in range(len(df)):
+
+    if df['underwater'].iloc[i] and start is None:
+        start = df['Date'].iloc[i]
+
+    elif not df['underwater'].iloc[i] and start is not None:
+
+        end = df['Date'].iloc[i]
+
+        duration_months = (end - start).days / 30.44
+
+        durations.append(duration_months)
+
+        start = None
+
+avg_duration = np.mean(durations) if durations else 0
+max_duration = np.max(durations) if durations else 0
+
+# --------------------------
+# Sharpe Ratio
+# --------------------------
+
+risk_free_rate = 0.07
+
+annual_return = df['returns'].mean() * 252
+
+annual_volatility = df['returns'].std() * np.sqrt(252)
+
+sharpe_ratio = (
+    (annual_return - risk_free_rate)
+    / annual_volatility
+)
+
+# --------------------------
+# Results
+# --------------------------
+
+print(f"Maximum Drawdown: {max_drawdown:.2%}")
+
+print(f"Average Recovery Time: {avg_duration:.2f} months")
+
+print(f"Longest Recovery Time: {max_duration:.2f} months")
+
+print(f"Sharpe Ratio: {sharpe_ratio:.2f}")
